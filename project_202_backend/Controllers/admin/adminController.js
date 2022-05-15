@@ -54,6 +54,7 @@ adminController.signup = async function (req, res) {
                     mobileNumber: req.body.mobileNumber,
                     password: hash,
                     type: req.body.type,
+                    rewardPoints: 10
                 }
 
                 Admin.create(admin).then(function (admin) {
@@ -104,7 +105,7 @@ adminController.signin = async function (req, res) {
                 });
             } else {
                 const match = await bcrypt.compare(req.body.password, admin.password);
-            
+
                 if (match) {
                     const token = createToken(admin._id);
                     admin.token = token;
@@ -233,18 +234,18 @@ adminController.addHotel = async function (req, res){
 adminController.updateHotel = async function (req, res) {
     try{
         const findHotel = await Hotel.findOne({hotelName:req.body.hotelName});
-        
 
-    
+
+
         const hotel = await Hotel.findOneAndUpdate(
             { hotelName:req.body.hotelName },
             {
                 ...req.body,
             }
         );
-        
+
         const findHotelToReturn = await Hotel.findOne({hotelName:req.body.hotelName});
-        
+
         if (findHotelToReturn) {
             res.status(responseMessages.hotelUpdate.code).json({
                 message: responseMessages.hotelUpdate.message,
@@ -262,7 +263,7 @@ adminController.updateHotel = async function (req, res) {
 adminController.deleteHotel = async function (req, res) {
     try{
         const deleteHotel = await Hotel.findOneAndDelete({ hotelName:req.body.hotelName });
-        
+
         res.status(responseMessages.hotelDelete.code).json({
             message: responseMessages.hotelDelete.message,
         });
@@ -276,7 +277,7 @@ adminController.deleteHotel = async function (req, res) {
 adminController.deleteHotelFromId = async function (req, res) {
     try{
         const deleteHotel = await Hotel.findOneAndDelete({ hotelNumber:req.body.hotelNumber });
-        
+
         res.status(responseMessages.hotelDelete.code).json({
             message: responseMessages.hotelDelete.message,
         });
@@ -316,124 +317,130 @@ adminController.getHotel = async function(req,res){
 }
 adminController.getHotelFromLocationAndDates = async function(req,res){
     console.log(req);
-    try{
-    const hotels = await Hotel.find({hotelLocation: req.body.hotelLocation}, {hotelNumber: 1});
+    const hotels = await Hotel.find({hotelLocation: req.body.hotelLocation}, {hotelNumber: 1, _id: 0});
     console.log("hotel info");
     console.log(hotels);
-    const var1 = await Room.find({$and: [{$or: hotels}, {type: req.body.type}]}); 
-    if(var1.length != 0){
-        res.status(responseMessages.hotelsFound.code).json({
-            message: responseMessages.hotelsFound.message,
-            rooms:var1,
-        }); 
-    }
-    else{
-        res.status(responseMessages.hotelsFound.code).json({
-            message: "in else-no search found"
-        });  
-    }
-    let var2 = await Book.find({$or: var1});
-    if(var2.length == 0){
-        res.status(responseMessages.hotelsFound.code).json({
-            message: responseMessages.hotelsFound.message,
-            rooms:var1,
-        }); 
-    }
-    try{
-    if(var2==null)
-      {
-          var2=var1;
-      }
-    }
-    catch(err)
-    {
-       console.log(err);
-       console.log(var1);
-    
-    }
-    
-    for (const element of var2) {
-           d1 = req.body.startDate;
-           d2 = req.body.endDate;
-           startD = element.startDate;
-           endD = element.endDate;
-           var dates = {
-            convert:function(d) {
-                
-                return (
-                    d.constructor === Date ? d :
-                    d.constructor === Array ? new Date(d[0],d[1],d[2]) :
-                    d.constructor === Number ? new Date(d) :
-                    d.constructor === String ? new Date(d) :
-                    typeof d === "object" ? new Date(d.year,d.month,d.date) :
-                    NaN
-                );
-            },
-            compare:function(a,b) {
-                return (
-                    isFinite(a=this.convert(a).valueOf()) &&
-                    isFinite(b=this.convert(b).valueOf()) ?
-                    (a>b)-(a<b) :
-                    NaN
-                );
-            },
-            inRange:function(d,start,end) {
-               return (
-                    isFinite(d=this.convert(d1).valueOf()) &&
-                    isFinite(start=this.convert(start).valueOf()) &&
-                    isFinite(end=this.convert(end).valueOf()) ?
-                    start <= d && d <= end :
-                    NaN
-                        );
-                 }
-            }
-            if (dates.inRange(d1,startD,endD) && dates.inRange(d2,startD,endD)){
-                console.log("123")
-                for (const i in var1){
-                    console.log(var1[i])
-                    if(var1[i].roomNumber == element.roomNumber){
-                        console.log("1234")
-                        var1.pop(i)
-                    }
-                }
-                
-                
-            }
-        
-      }
+    var rooms =[]
+    var rooms1
 
-    if(var1.length != 0 && var2.length !=0){
-        res.status(responseMessages.hotelsFound.code).json({
-            message: responseMessages.hotelsFound.message,
-            rooms:var1,
-        });
+    for (const htl of hotels){
+        rooms1 = await Room.find({hotelNumber: htl.hotelNumber})
+
+        rooms= [...rooms, ...rooms1];
     }
-    
-    
-    else{
-        res.status(responseMessages.hotelsNotFound.code).json({
-            message: responseMessages.hotelsNotFound.message,
-        });
-    }
-}
-catch(err){
-console.log(err);
-}
-}
+    console.log(rooms)
+    //console.log(rooms);
+    try{
+        //const var1 = await Room.find({$and: [{$or: hotels}, {type: req.body.type},{roomNumber: 1, _id: 0}]});
+        if(rooms.length != 0){
+            var b1 = []
+            var b2
+            for(const b of rooms){
+                b2 = await Book.find({roomNumber: b.roomNumber} );
+                b1 = [...b1, ...b2];
+            }
+            //const var2 = await Book.find({$or: var1});
+            if(b1.length == 0){
+                res.status(responseMessages.hotelsFound.code).json({
+                    message: responseMessages.hotelsFound.message,
+                    rooms:rooms,
+                });
+            }
+            else{
+                for (const element of b1) {
+                    d1 = req.body.startDate;
+                    d2 = req.body.endDate;
+                    startD = element.startDate;
+                    endD = element.endDate;
+                    var dates = {
+                        convert:function(d) {
+
+                            return (
+                                d.constructor === Date ? d :
+                                    d.constructor === Array ? new Date(d[0],d[1],d[2]) :
+                                        d.constructor === Number ? new Date(d) :
+                                            d.constructor === String ? new Date(d) :
+                                                typeof d === "object" ? new Date(d.year,d.month,d.date) :
+                                                    NaN
+                            );
+                        },
+                        compare:function(a,b) {
+                            return (
+                                isFinite(a=this.convert(a).valueOf()) &&
+                                isFinite(b=this.convert(b).valueOf()) ?
+                                    (a>b)-(a<b) :
+                                    NaN
+                            );
+                        },
+                        inRange:function(d,start,end) {
+                            return (
+                                isFinite(d=this.convert(d1).valueOf()) &&
+                                isFinite(start=this.convert(start).valueOf()) &&
+                                isFinite(end=this.convert(end).valueOf()) ?
+                                    start <= d && d <= end :
+                                    NaN
+                            );
+                        }
+                    }
+                    if (dates.inRange(d1,startD,endD) && dates.inRange(d2,startD,endD)){
+                        console.log("123")
+                        for (const i in var1){
+                            console.log(var1[i])
+                            if(rooms[i].roomNumber == element.roomNumber){
+                                console.log("1234")
+                                rooms.pop(i)
+                            }
+                        }
+
+
+                    }
+                    res.status(responseMessages.hotelsFound.code).json({
+                        message: responseMessages.hotelsFound.message,
+                        rooms:rooms,
+                    });
+                }
+
+
+            }}
+        else{
+            res.status(responseMessages.hotelsFound.code).json({
+                message: "in else-no search found"
+            });
+        }
+    }catch(err){console.log("last error");}}
+
+//if(var1.length != 0 && var2.length !=0){
+//  res.status(responseMessages.hotelsFound.code).json({
+//    message: responseMessages.hotelsFound.message,
+//  rooms:var1,
+//});
+// }
+
+
+//else{
+//  res.status(responseMessages.hotelsNotFound.code).json({
+//    message: responseMessages.hotelsNotFound.message,
+//});
+//}
+
 
 adminController.getHotelFromLocation = async function(req,res){
-    const hotels = await Hotel.find({hotelLocation: req.body.hotelLocation });
-    if(hotels.length != 0){
-        res.status(responseMessages.hotelsFound.code).json({
-            message: responseMessages.hotelsFound.message,
-            hotels:hotels,
-        });
-    }else{
-        res.status(responseMessages.hotelsNotFound.code).json({
-            message: responseMessages.hotelsNotFound.message,
-        });
+    try{
+        const hotels = await Hotel.find({hotelLocation: req.body.hotelLocation });
+        if(hotels.length != 0){
+            res.status(responseMessages.hotelsFound.code).json({
+                message: responseMessages.hotelsFound.message,
+                hotels:hotels,
+            });
+        }else{
+            res.status(responseMessages.hotelsNotFound.code).json({
+                message: responseMessages.hotelsNotFound.message,
+            });
+        }
     }
-}
+    catch(err){
+        console.log("errl");
+    }}
 
 adminController.addRoom = async function(req,res){
     console.log("room added")
@@ -453,8 +460,8 @@ adminController.addRoom = async function(req,res){
         }
 
         const roomCreated = await Room.create( room );
-        
-        const updateroom = await Room.findByIdAndUpdate( 
+
+        const updateroom = await Room.findByIdAndUpdate(
             { _id: roomCreated._id },
         );
         const updatedData = await Room.findOne({ _id: updateroom._id });
@@ -467,8 +474,8 @@ adminController.addRoom = async function(req,res){
             message: responseMessages.hotelCreated.message,
             result: result
         });
-    
-        
+
+
 } catch(err) {
     console.log(err);
     res.status(responseMessages.hotelCreationFailed.code).json({
@@ -479,16 +486,16 @@ adminController.addRoom = async function(req,res){
 adminController.updateRoom = async function (req, res) {
     try{
         const findRoom = await Room.findOne({roomNumber:req.body.roomNumber});
-        
+
         const room = await Room.findOneAndUpdate(
             { roomNumber:req.body.roomNumber },
             {
                 ...req.body,
             }
         );
-        
+
         const findRoomToReturn = await Room.findOne({roomNumber:req.body.roomNumber});
-        
+
         if (findRoomToReturn) {
             res.status(responseMessages.hotelUpdate.code).json({
                 message: responseMessages.hotelUpdate.message,
@@ -590,30 +597,29 @@ adminController.addBooking = async function(req,res){
 
         const nextBookingNum = ((parseInt(maxBookingNums[0].bookingNumber,10) < 1))?(parseInt(maxBookingNums[0].bookingNumber,10) + 1):1;
 
+        const user = await Admin.findById({_id: req.body.userId})
+        var newBalance = user.rewardPoints - req.body.rewardPoints
+        user = await Admin.findOneAndUpdate({_id: req.body.userId},{
+            rewardPoints: newBalance
+        });
+        var newPrice = req.body.price - ((req.body.rewardPoints)*5)
         const book = {
             bookingNumber: nextBookingNum,
             userId: req.body.userId,
             hotelId: req.body.hotelId,
             roomId: req.body.roomID,
-            // userName: req.body.userName,
-            // hotelNumber: req.body.hotelNumber,
-            // roomNumber: req.body.roomNumber,
+            roomNumber: req.body.roomNumber,
             amount: req.body.amount,
             startDate: req.body.startDate,
             endDate: req.body.endDate,
             guests: req.body.guests,
-            // status: req.body.status,
-            status: "Success"
-            // price: price
+            status: "Success",
+            price: newPrice
         }
 
         const bookingCreated = await Book.create( book );
-        let user = await Admin.findById({_id: req.body.userId})
-        var newBalance = user.rewardPoints - req.body.rewardPoints
-        user = await Admin.findOneAndUpdate({_id: req.body.userId},{
-            rewardPoints: newBalance
-        });
-        const updateBooking = await Book.findByIdAndUpdate( 
+
+        const updateBooking = await Book.findByIdAndUpdate(
             { _id: bookingCreated._id },
         );
         const updatedData = await Book.findOne({ _id: updateBooking._id });
@@ -621,13 +627,13 @@ adminController.addBooking = async function(req,res){
         result = {
             updatedData
         }
-        
+
         res.status(responseMessages.hotelCreated.code).json({
             message: responseMessages.hotelCreated.message,
             result: result
         });
-    
-        
+
+
 } catch(err) {
     console.log(err);
     res.status(responseMessages.hotelCreationFailed.code).json({
@@ -638,10 +644,6 @@ adminController.addBooking = async function(req,res){
 
 adminController.updateBooking = async function (req, res) {
     try{
-        const findBooking = await Book.findOne({bookingNumber:req.body.bookingNumber});
-        let user = await Admin.findOne({userId: req.body.userId})
-        bookingAmount1 = findBooking[0].amount
-        var rewardPointsPrev = user[0].rewardPoints
         const room = await Room.find({roomNumber: req.body.roomNumber});
         console.log(room);
         const roomBasePrice = room[0].roomBasePrice;
@@ -651,11 +653,12 @@ adminController.updateBooking = async function (req, res) {
         var loop = new Date(start);
         const weekendCharge = hotel[0].weekendCharge
         const breakfast = req.body.breakfast
-        const meal = req.body.meal 
-        const gym = req.body.gym 
-        const pool = req.body.pool 
-        const parking = req.body.parking 
-        const extraGuestCharge = req.body.guests
+        const meal = req.body.meal
+        const gym = req.body.gym
+        const pool = req.body.pool
+        const parking = req.body.parking
+        const guests = req.body.guests
+        const extraGuestCharge = hotel[0].extraGuestCharge
         console.log(roomBasePrice);
         console.log(weekendCharge);
         console.log(start);
@@ -664,41 +667,46 @@ adminController.updateBooking = async function (req, res) {
         var Holidays = require('date-holidays');
         var hd = new Holidays();
         hd.getStates('US');
-        hd.init('US'); 
+        hd.init('US');
         hd.getHolidays(2022);
 
         var c1 = 0;
         //var c2 = 0;
         while(loop <= end){
             if (loop.getDay() == 6 || loop.getDay() == 0){
-                
-                c1 += weekendCharge 
+
+                c1 += weekendCharge
                 console.log(c1)
             }
 
-            if (hd.isHoliday(loop) == true) { 
+            else if (hd.isHoliday(loop) == true) {
                 c1 += holidayCharge;
+                console.log("holiday")
             }
-            
+            else{
+                c1+= roomBasePrice;
+            }
+
             var newDate = loop.setDate(loop.getDate() + 1);
             loop = new Date(newDate);
         }
-        let total = c1 + roomBasePrice;
+
         if (breakfast){
-            total+= hotel[0].breakfast
+            console.log("brkfast")
+            c1+= hotel[0].breakfast
         }
         if (meal){
-            total+= hotel[0].meal
+            c1+= hotel[0].meal
         }if (gym){
-            total+= hotel[0].gym
+            c1+= hotel[0].gym
         }if (pool){
-            total+= hotel[0].pool
+            c1+= hotel[0].pool
         }if (parking){
-            total+= hotel[0].parking
+            c1+= hotel[0].parking
         }if (guests == "3"){
-            total+= hotel[0].extraGuestCharge
+            c1+= hotel[0].extraGuestCharge
         }
-        var bookingAmount2 = total
+        var bookingAmount2 = c1
         if (bookingAmount2>bookingAmount1){
             var difference = bookingAmount2-bookingAmount1
         }
@@ -712,22 +720,22 @@ adminController.updateBooking = async function (req, res) {
         const booking = await Book.findOneAndUpdate(
             { bookingNumber:req.body.bookingNumber },
             {
-            userId: req.body.userId,
-            bookingNumber: req.body.bookingNumber,
-            hotelId: req.body.hotelId,
-            roomId: req.body.roomID,
-            roomNumber: req.body.roomNumber,
-            amount: bookingAmount2,
-            startDate: req.body.startDate,
-            endDate: req.body.endDate,
-            guests: req.body.guests,
-            status: req.body.status,
-            price: req.body.price
+                userId: req.body.userId,
+                bookingNumber: req.body.bookingNumber,
+                hotelId: req.body.hotelId,
+                roomId: req.body.roomID,
+                roomNumber: req.body.roomNumber,
+                amount: bookingAmount2,
+                startDate: req.body.startDate,
+                endDate: req.body.endDate,
+                guests: req.body.guests,
+                status: req.body.status,
+                price: req.body.price
             }
         );
-        
+
         const findBookingToReturn = await Book.findOne({bookingNumber:req.body.bookingNumber});
-        
+
         if (findBookingToReturn) {
             res.status(responseMessages.hotelUpdate.code).json({
                 message: responseMessages.hotelUpdate.message,
@@ -758,7 +766,8 @@ adminController.calculatePrice = async function(req,res){
     const gym = req.body.gym
     const pool = req.body.pool
     const parking = req.body.parking
-    const extraGuestCharge = req.body.guests
+    const guests = req.body.guests
+    const extraGuestCharge = hotel[0].extraGuestCharge
     console.log(roomBasePrice);
     console.log(weekendCharge);
     console.log(start);
@@ -779,36 +788,41 @@ adminController.calculatePrice = async function(req,res){
             console.log(c1)
         }
 
-        if (hd.isHoliday(loop) == true) {
+        else if (hd.isHoliday(loop) == true) {
             c1 += holidayCharge;
+            console.log("holiday")
+        }
+        else{
+            c1+= roomBasePrice;
         }
 
         var newDate = loop.setDate(loop.getDate() + 1);
         loop = new Date(newDate);
     }
-    let total = c1 + roomBasePrice;
+
     if (breakfast){
-        total+= hotel[0].breakfast
+        console.log("brkfast")
+        c1+= hotel[0].breakfast
     }
     if (meal){
-        total+= hotel[0].meal
+        c1+= hotel[0].meal
     }if (gym){
-        total+= hotel[0].gym
+        c1+= hotel[0].gym
     }if (pool){
-        total+= hotel[0].pool
+        c1+= hotel[0].pool
     }if (parking){
-        total+= hotel[0].parking
+        c1+= hotel[0].parking
     }if (guests == "3"){
-        total+= hotel[0].extraGuestCharge
+        c1+= hotel[0].extraGuestCharge
     }
+    console.log(c1)
 
+    res.status(responseMessages.hotelUpdate.code).json({
 
+        price: c1
 
-    res.json({
-        message:"Calculated",
-        price: total
+    });
 
-    })
 }
 
 adminController.getBookingFromUserId = async function(req,res){
@@ -859,7 +873,7 @@ adminController.getAllBookings = async function(req, res){
 adminController.deleteBookingFromId = async function (req, res) {
     try{
         const deleteBooking = await Book.findOneAndDelete({ bookingNumber:req.body.bookingNumber });
-        
+
         res.status(responseMessages.hotelDelete.code).json({
             message: responseMessages.hotelDelete.message,
         });

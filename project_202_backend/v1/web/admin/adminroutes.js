@@ -15,8 +15,8 @@ adminRouter.post('/updateHotel', adminAuth, adminController.updateHotel);
 adminRouter.post('/deleteHotel', adminController.deleteHotel);
 adminRouter.post('/getAllHotels', adminController.getAllHotels);
 adminRouter.post('/getHotel', adminController.getHotel);
-adminRouter.post('/getHotelFromLocation/', adminController.getHotelFromLocation);
 adminRouter.post('/getHotelFromLocationAndDates', adminController.getHotelFromLocationAndDates);
+adminRouter.post('/getHotelFromLocation/', adminController.getHotelFromLocation);
 
 adminRouter.post('/addRoom', adminController.addRoom);
 adminRouter.post('/updateRoom', adminController.updateRoom);
