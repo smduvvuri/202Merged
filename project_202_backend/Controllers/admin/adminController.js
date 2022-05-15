@@ -591,15 +591,21 @@ adminController.addBooking = async function(req,res){
     try{
 
         // const maxBookingNums = await Book.find(`bookingNumber`);
-        const maxBookingNums = await Book.find({},{"bookingNumber":1}).sort({_id:-1}).limit(1);
+        const maxBookingNums = await Book.find({},{bookingNumber:1}).sort({_id:-1}).limit(1);
         // const maxBookingNums = Book.find({}).sort({_id:-1}).limit(1);
-        console.log(maxBookingNums[0].bookingNumber);
+       console.log(maxBookingNums);
+        let nextBookingNum=0;
 
-        const nextBookingNum = ((parseInt(maxBookingNums[0].bookingNumber,10) < 1))?(parseInt(maxBookingNums[0].bookingNumber,10) + 1):1;
-
-        const user = await Admin.findById({_id: req.body.userId})
+        if(maxBookingNums.length===0){
+           nextBookingNum=1;
+       }
+       else {
+            nextBookingNum=parseInt(maxBookingNums[0].bookingNumber, 10) + 1;
+            //nextBookingNum = ((parseInt(maxBookingNums[0].bookingNumber, 10) < 1)) ? (parseInt(maxBookingNums[0].bookingNumber, 10) + 1) : 1;
+        }
+        let user = await Admin.find({userId: req.body.userId})
         var newBalance = user.rewardPoints - req.body.rewardPoints
-        user = await Admin.findOneAndUpdate({_id: req.body.userId},{
+        user = await Admin.findOneAndUpdate({userId: req.body.userId},{
             rewardPoints: newBalance
         });
         var newPrice = req.body.price - ((req.body.rewardPoints)*5)
@@ -614,7 +620,12 @@ adminController.addBooking = async function(req,res){
             endDate: req.body.endDate,
             guests: req.body.guests,
             status: "Success",
-            price: newPrice
+            price: newPrice,
+            breakfast: req.body.breakfast,
+            fitness:req.body.fitness,
+            swimming: req.body.swimming,
+            parking: req.body.parking,
+            meals:req.body.meals,
         }
 
         const bookingCreated = await Book.create( book );
@@ -650,14 +661,15 @@ adminController.updateBooking = async function (req, res) {
         var start = new Date(req.body.startDate);
         var end = new Date(req.body.endDate);
         const hotel = await Hotel.find({hotelNumber: room[0].hotelNumber});
+        const temp1=await Book.find({bookingNumber:req.body.bookingNumber})
         var loop = new Date(start);
         const weekendCharge = hotel[0].weekendCharge
-        const breakfast = req.body.breakfast
-        const meal = req.body.meal
-        const gym = req.body.gym
-        const pool = req.body.pool
-        const parking = req.body.parking
-        const guests = req.body.guests
+        const breakfast = temp1[0].breakfast
+        const meal = temp1[0].meal
+        const gym = temp1[0].gym
+        const pool = temp1[0].pool
+        const parking = temp1[0].parking
+        const guests = temp1[0].guests
         const extraGuestCharge = hotel[0].extraGuestCharge
         console.log(roomBasePrice);
         console.log(weekendCharge);
