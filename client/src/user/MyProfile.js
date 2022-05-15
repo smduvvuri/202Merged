@@ -181,6 +181,23 @@ export default class MyProfile extends React.Component {
                   </td>
                 </div>
               </tr>
+              <tr>
+                <div className="form-group mb-3">
+                  <td style={{width: '250px'}}>
+                    <label className="form-label">Reward Points</label>
+                  </td>
+                  <td style={{width: `400px`}}>
+                    <input
+                        name = "type"
+                        type="text"
+                        className="form-control"
+                        placeholder="Enter Reward Points"
+                        value={this.state.profile.rewardPoints}
+                        onChange={this.onChange}
+                    />
+                  </td>
+                </div>
+              </tr>
               {/*<tr>*/}
               {/*  <div className="form-group mb-3">*/}
               {/*    <td style={{width: '250px'}}>*/}
