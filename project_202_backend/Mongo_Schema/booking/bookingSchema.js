@@ -43,6 +43,25 @@ const bookingSchema = new Schema({
         type: String,
         Enum: ['Success','Fail','Cancelled']
     },
+    price: {
+        type: Number,
+        required: true
+    },
+    breakfast: {
+        type: Boolean,
+    },
+    gym: {
+        type: Boolean,
+    },
+    pool: {
+        type: Boolean,
+    },
+    parking: {
+        type: Boolean,
+    },
+    meal: {
+        type: Boolean,
+    },
 }, {
   timestamps: true,
 });

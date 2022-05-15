@@ -25,7 +25,7 @@ const AdminSchema = new Schema({
         type: String
     },
     rewardPoints: {
-        type: String,
+        type: Number,
     }
 },
 {

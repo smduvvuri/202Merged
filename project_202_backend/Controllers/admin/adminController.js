@@ -35,9 +35,11 @@ const createToken = function (id) {
 
 adminController.signup = async function (req, res) {
 
-    const maxUserId = await Admin.find({},{"userId":1}).sort({_id:-1}).limit(1);
-    console.log(maxUserId)
-    const nextUserId = ((parseInt(maxUserId[0].userId,10) < 1))?(parseInt(maxUserId[0].userId,10) + 1):1;
+    const maxUserId = await Admin.find({},{"userId":1}).sort({userId:-1}).limit(1);
+    // console.log("printting mac userId")
+    // console.log(maxUserId)
+    // console.log((parseInt(maxUserId[0].userId,10)))
+    const nextUserId = ((parseInt(maxUserId[0].userId,10) > 0))?(parseInt(maxUserId[0].userId,10) + 1):1;
     console.log(nextUserId)
 
     Admin.findOne({ email: req.body.email }).then(function (user) {
@@ -120,7 +122,8 @@ adminController.signin = async function (req, res) {
                             mobileNumber: admin.mobileNumber,
                             token: token,
                             userName: admin.userName,
-                            profileImage: admin.profileImage
+                            profileImage: admin.profileImage,
+                            rewardPoints: admin.rewardPoints
                         }
                     });
                 } else {
@@ -184,8 +187,10 @@ adminController.updateProfile = async function (req, res) {
 
 adminController.addHotel = async function (req, res){
     console.log("addHotel")
-    const maxHotelNum = await Hotel.find({},{"hotelNumber":1}).sort({_id:-1}).limit(1);
-    const nextHotelNum = ((parseInt(maxHotelNum[0].hotelNumber,10) < 1))?(parseInt(maxHotelNum[0].hotelNumber,10) + 1):1;
+    const maxHotelNum = await Hotel.find({},{"hotelNumber":1}).sort({hotelNumber:-1}).limit(1);
+    // const maxHotelNum = await Hotel.find({},{"hotelNumber":1}).sort({_id:-1}).limit(1);
+   console.log(maxHotelNum)
+    const nextHotelNum = ((parseInt(maxHotelNum[0].hotelNumber,10) > 0))?(parseInt(maxHotelNum[0].hotelNumber,10) + 1):1;
     try{
         const hotel = {
             hotelNumber: nextHotelNum,
@@ -444,8 +449,8 @@ adminController.getHotelFromLocation = async function(req,res){
 
 adminController.addRoom = async function(req,res){
     console.log("room added")
-    const maxRoomNum = await Room.find({},{"roomNumber":1}).sort({_id:-1}).limit(1);
-    const nextRoomNum = ((parseInt(maxRoomNum[0].roomNumber,10) < 1))?(parseInt(maxRoomNum[0].roomNumber,10) + 1):1;
+    const maxRoomNum = await Room.find({},{"roomNumber":1}).sort({roomNumber:-1}).limit(1);
+    const nextRoomNum = ((parseInt(maxRoomNum[0].roomNumber,10) > 0))?(parseInt(maxRoomNum[0].roomNumber,10) + 1):1;
 
     try{
         const room = {
@@ -591,7 +596,7 @@ adminController.addBooking = async function(req,res){
     try{
 
         // const maxBookingNums = await Book.find(`bookingNumber`);
-        const maxBookingNums = await Book.find({},{bookingNumber:1}).sort({_id:-1}).limit(1);
+        const maxBookingNums = await Book.find({},{bookingNumber:1}).sort({bookingNumber:-1}).limit(1);
         // const maxBookingNums = Book.find({}).sort({_id:-1}).limit(1);
        console.log(maxBookingNums);
         let nextBookingNum=0;
@@ -604,11 +609,14 @@ adminController.addBooking = async function(req,res){
             //nextBookingNum = ((parseInt(maxBookingNums[0].bookingNumber, 10) < 1)) ? (parseInt(maxBookingNums[0].bookingNumber, 10) + 1) : 1;
         }
         let user = await Admin.find({userId: req.body.userId})
-        var newBalance = user.rewardPoints - req.body.rewardPoints
+        console.log("req.body.rewardPoints "+req.body.rewardPoints)
+        console.log("user.rewardPoints "+user[0].rewardPoints)
+        var newBalance = parseInt(user[0].rewardPoints,10) - parseInt(req.body.rewardPoints,10)
+        console.log("newBalance "+newBalance)
         user = await Admin.findOneAndUpdate({userId: req.body.userId},{
             rewardPoints: newBalance
         });
-        var newPrice = req.body.price - ((req.body.rewardPoints)*5)
+        var newPrice = req.body.amount - ((req.body.rewardPoints)*5)
         const book = {
             bookingNumber: nextBookingNum,
             userId: req.body.userId,
@@ -622,10 +630,10 @@ adminController.addBooking = async function(req,res){
             status: "Success",
             price: newPrice,
             breakfast: req.body.breakfast,
-            fitness:req.body.fitness,
-            swimming: req.body.swimming,
+            gym:req.body.fitness,
+            pool: req.body.swimming,
             parking: req.body.parking,
-            meals:req.body.meals,
+            meal:req.body.meals,
         }
 
         const bookingCreated = await Book.create( book );
@@ -662,14 +670,18 @@ adminController.updateBooking = async function (req, res) {
         var end = new Date(req.body.endDate);
         const hotel = await Hotel.find({hotelNumber: room[0].hotelNumber});
         const temp1=await Book.find({bookingNumber:req.body.bookingNumber})
+        const bookingAmount1 = temp1[0].price
+        let user = await Admin.find({userId:req.body.userId})
+        const rewardPointsPrev = user[0].rewardPoints
         var loop = new Date(start);
         const weekendCharge = hotel[0].weekendCharge
-        const breakfast = temp1[0].breakfast
-        const meal = temp1[0].meal
-        const gym = temp1[0].gym
-        const pool = temp1[0].pool
-        const parking = temp1[0].parking
-        const guests = temp1[0].guests
+        const breakfast = req.body.breakfast
+        const meal = req.body.meal
+        console.log("meal "+meal)
+        const gym = req.body.gym
+        const pool = req.body.pool
+        const parking = req.body.parking
+        const guests = req.body.guests
         const extraGuestCharge = hotel[0].extraGuestCharge
         console.log(roomBasePrice);
         console.log(weekendCharge);
@@ -703,28 +715,40 @@ adminController.updateBooking = async function (req, res) {
             loop = new Date(newDate);
         }
 
-        if (breakfast){
+        if (breakfast === "true"){
             console.log("brkfast")
             c1+= hotel[0].breakfast
         }
-        if (meal){
+        if (meal === "true"){
+            console.log("meal")
             c1+= hotel[0].meal
-        }if (gym){
+        }
+        if (gym === "true"){
+            console.log("gym")
             c1+= hotel[0].gym
-        }if (pool){
+        }
+        if (pool === "true"){
+            console.log("pool")
             c1+= hotel[0].pool
-        }if (parking){
+        }
+        if (parking === "true"){
+            console.log("parking")
             c1+= hotel[0].parking
-        }if (guests == "3"){
+        }
+        if (guests === "3"){
             c1+= hotel[0].extraGuestCharge
         }
         var bookingAmount2 = c1
+        var payFlag = "no"
+        var difference = 0
         if (bookingAmount2>bookingAmount1){
-            var difference = bookingAmount2-bookingAmount1
+            difference = bookingAmount2-bookingAmount1
+            payFlag = "yes"
         }
         else{
+            difference = bookingAmount1-bookingAmount2
             newBalance = bookingAmount1-bookingAmount2 + rewardPointsPrev
-            user = await Admin.findOneAndUpdate({_id: req.body.userId},{
+            user = await Admin.findOneAndUpdate({userId: req.body.userId},{
                 rewardPoints: newBalance
             });
         }
@@ -738,11 +762,12 @@ adminController.updateBooking = async function (req, res) {
                 roomId: req.body.roomID,
                 roomNumber: req.body.roomNumber,
                 amount: bookingAmount2,
+                price: bookingAmount2,
                 startDate: req.body.startDate,
                 endDate: req.body.endDate,
                 guests: req.body.guests,
                 status: req.body.status,
-                price: req.body.price
+                // price: req.body.price
             }
         );
 
@@ -752,7 +777,8 @@ adminController.updateBooking = async function (req, res) {
             res.status(responseMessages.hotelUpdate.code).json({
                 message: responseMessages.hotelUpdate.message,
                 res: findBookingToReturn,
-                diff: difference
+                diff: difference,
+                payFlag: payFlag
 
             });
         }
