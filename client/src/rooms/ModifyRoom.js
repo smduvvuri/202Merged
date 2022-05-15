@@ -48,7 +48,7 @@ export default class ModifyRoom extends React.Component {
               }
               axios.post(`${process.env.REACT_APP_API}/getRoomFromHotel`, data, {
                 headers: {
-                  authorization: localStorage.getItem('auth') && JSON.parse(localStorage.getItem('auth')).result.token
+                  authorization: JSON.parse(localStorage.getItem('auth')).result.token
                 }
               }).then((response) => {
                 console.log(response.data.rooms);
@@ -85,7 +85,7 @@ export default class ModifyRoom extends React.Component {
 
     axios.post(`${process.env.REACT_APP_API}/updateRoom`, data, {
       headers: {
-        authorization: localStorage.getItem('auth') && JSON.parse(localStorage.getItem('auth')).result.token
+        authorization: JSON.parse(localStorage.getItem('auth')).result.token
       }
     }).then((response) => {
 
@@ -114,7 +114,7 @@ export default class ModifyRoom extends React.Component {
 
     axios.post(`${process.env.REACT_APP_API}/getRoom`, data, {
       headers: {
-        authorization: localStorage.getItem('auth') && JSON.parse(localStorage.getItem('auth')).result.token
+        authorization: JSON.parse(localStorage.getItem('auth')).result.token
       }
     }).then((response) => {
       console.log(response.data.room);
@@ -133,7 +133,7 @@ export default class ModifyRoom extends React.Component {
   componentDidMount() {
     axios.post(`${process.env.REACT_APP_API}/getAllHotels`, {
       headers: {
-        authorization: localStorage.getItem('auth') && JSON.parse(localStorage.getItem('auth')).result.token
+        authorization: JSON.parse(localStorage.getItem('auth')).result.token
       }
     })
         .then(res => {

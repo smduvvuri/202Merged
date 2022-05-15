@@ -15,6 +15,7 @@ import DeleteHotel from "./hotels/DeleteHotel";
 import AllHotels from "./hotels/AllHotels";
 import HotelManagement from "./user/hotelManagement";
 import RoomManagement from "./user/roomManagement";
+import BookingManagement from "./user/bookingManagement";
 import Profile from "./components/Profile";
 import Billing from "./components/Billing";
 import Booking from "./components/Booking";
@@ -26,6 +27,10 @@ import AllRooms from "./rooms/AllRooms";
 import ModifyRoom from "./rooms/ModifyRoom";
 import DeleteRoom from "./rooms/DeleteRoom";
 import MyProfile from "./user/MyProfile";
+import AllBookings from "./booking/AllBookings";
+import MyBookings from "./booking/MyBookings";
+import ModifyBooking from "./booking/ModifyBooking";
+import DeleteBooking from "./booking/DeleteBooking";
 import ProfileManagement from "./user/profileManagement";
 import ViewRoomsByHotel from "./components/ViewRoomsByHotel";
 import SelectBookingDates from "./components/SelectBookingDates";
@@ -62,6 +67,11 @@ function App() {
         <PrivateRoute exact path="/room/delete" component={DeleteRoom}/>
         <PrivateRoute exact path="/profileNav" component={ProfileManagement} />
         <PrivateRoute exact path="/user/profile" component={MyProfile}/>
+        <PrivateRoute exact path="/booking/all" component={AllBookings} />
+        <PrivateRoute exact path="/booking/my" component={MyBookings} />
+        <PrivateRoute exact path="/booking/modify" component={ModifyBooking} />
+        <PrivateRoute exact path="/booking/delete" component={DeleteBooking}/>
+        <PrivateRoute exact path="/bookingNav" component={BookingManagement} />
         <PrivateRoute exact path="/searchHotelDashboard" component={SearchHotelDashboard} />
         <PrivateRoute exact path="/viewroomsbyhotel" component={ViewRoomsByHotel} />
         <PrivateRoute exact path="/selectbookingdates" component={SelectBookingDates} />
