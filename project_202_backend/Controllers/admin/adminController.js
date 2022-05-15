@@ -140,7 +140,7 @@ adminController.signin = async function (req, res) {
 
 adminController.getProfile = async function(req,res){
     console.log("Hi there!")
-    const profile = await Admin.findOne({userName: req.body.userName});
+    const profile = await Admin.findOne({userId: req.body.userId});
     if(profile){
         res.status(responseMessages.hotelsFound.code).json({
             message: responseMessages.hotelsFound.message,
