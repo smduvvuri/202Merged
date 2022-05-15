@@ -184,7 +184,7 @@ adminController.updateProfile = async function (req, res) {
 adminController.addHotel = async function (req, res){
     console.log("addHotel")
     const maxHotelNum = await Hotel.find({},{"hotelNumber":1}).sort({_id:-1}).limit(1);
-    const nextHotelNum = (maxHotelNum)?(parseInt(maxHotelNum[0].hotelNumber,10) + 1):1;
+    const nextHotelNum = ((parseInt(maxHotelNum[0].hotelNumber,10) < 1))?(parseInt(maxHotelNum[0].hotelNumber,10) + 1):1;
     try{
         const hotel = {
             hotelNumber: nextHotelNum,
@@ -332,7 +332,7 @@ adminController.getHotelFromLocationAndDates = async function(req,res){
             message: "in else-no search found"
         });  
     }
-    const var2 = await Book.find({$or: var1});
+    let var2 = await Book.find({$or: var1});
     if(var2.length == 0){
         res.status(responseMessages.hotelsFound.code).json({
             message: responseMessages.hotelsFound.message,
@@ -438,7 +438,7 @@ adminController.getHotelFromLocation = async function(req,res){
 adminController.addRoom = async function(req,res){
     console.log("room added")
     const maxRoomNum = await Room.find({},{"roomNumber":1}).sort({_id:-1}).limit(1);
-    const nextRoomNum = (maxRoomNum)?(parseInt(maxRoomNum[0].roomNumber,10) + 1):1;
+    const nextRoomNum = ((parseInt(maxRoomNum[0].roomNumber,10) < 1))?(parseInt(maxRoomNum[0].roomNumber,10) + 1):1;
 
     try{
         const room = {
@@ -462,7 +462,7 @@ adminController.addRoom = async function(req,res){
         result = {
             updatedData
         }
-        
+
         res.status(responseMessages.hotelCreated.code).json({
             message: responseMessages.hotelCreated.message,
             result: result
@@ -588,7 +588,7 @@ adminController.addBooking = async function(req,res){
         // const maxBookingNums = Book.find({}).sort({_id:-1}).limit(1);
         console.log(maxBookingNums[0].bookingNumber);
 
-        const nextBookingNum = (maxBookingNums)?(parseInt(maxBookingNums[0].bookingNumber,10) + 1):1;
+        const nextBookingNum = ((parseInt(maxBookingNums[0].bookingNumber,10) < 1))?(parseInt(maxBookingNums[0].bookingNumber,10) + 1):1;
 
         const book = {
             bookingNumber: nextBookingNum,
@@ -608,7 +608,7 @@ adminController.addBooking = async function(req,res){
         }
 
         const bookingCreated = await Book.create( book );
-        const user = await Admin.findById({_id: req.body.userId}) 
+        let user = await Admin.findById({_id: req.body.userId})
         var newBalance = user.rewardPoints - req.body.rewardPoints
         user = await Admin.findOneAndUpdate({_id: req.body.userId},{
             rewardPoints: newBalance
@@ -639,7 +639,7 @@ adminController.addBooking = async function(req,res){
 adminController.updateBooking = async function (req, res) {
     try{
         const findBooking = await Book.findOne({bookingNumber:req.body.bookingNumber});
-        const user = await Admin.findOne({userId: req.body.userId})
+        let user = await Admin.findOne({userId: req.body.userId})
         bookingAmount1 = findBooking[0].amount
         var rewardPointsPrev = user[0].rewardPoints
         const room = await Room.find({roomNumber: req.body.roomNumber});
@@ -683,7 +683,7 @@ adminController.updateBooking = async function (req, res) {
             var newDate = loop.setDate(loop.getDate() + 1);
             loop = new Date(newDate);
         }
-        const total = c1 + roomBasePrice;
+        let total = c1 + roomBasePrice;
         if (breakfast){
             total+= hotel[0].breakfast
         }
@@ -786,7 +786,7 @@ adminController.calculatePrice = async function(req,res){
         var newDate = loop.setDate(loop.getDate() + 1);
         loop = new Date(newDate);
     }
-    const total = c1 + roomBasePrice;
+    let total = c1 + roomBasePrice;
     if (breakfast){
         total+= hotel[0].breakfast
     }

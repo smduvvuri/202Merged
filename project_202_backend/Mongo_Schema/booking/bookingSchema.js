@@ -8,16 +8,16 @@ const bookingSchema = new Schema({
         required: true
     },
     userId: {
-        type: Schema.Types.ObjectId,
+        type: Number,
         ref: "users"  
     },
     hotelId: {
-        type: Schema.Types.ObjectId,
+        type:Number,
         ref: "hotels"  
     },
     roomId: {
-        type: Schema.Types.ObjectId,
-        ref: "rooms"  
+        type: Number,
+        ref: "rooms"
     },
     roomNumber:{
        type: String,

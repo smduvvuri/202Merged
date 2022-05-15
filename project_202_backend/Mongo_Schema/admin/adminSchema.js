@@ -6,6 +6,9 @@ const AdminSchema = new Schema({
     profileImage: {
         type: String,
     },
+    userId: {
+        type: Number,
+    },
     userName: {
         type: String,
     },
