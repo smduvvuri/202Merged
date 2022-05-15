@@ -35,6 +35,11 @@ const createToken = function (id) {
 
 adminController.signup = async function (req, res) {
 
+    const maxUserId = await Admin.find({},{"userId":1}).sort({_id:-1}).limit(1);
+    console.log(maxUserId)
+    const nextUserId = ((parseInt(maxUserId[0].userId,10) < 1))?(parseInt(maxUserId[0].userId,10) + 1):1;
+    console.log(nextUserId)
+
     Admin.findOne({ email: req.body.email }).then(function (user) {
         if (user) {
             res.status(responseMessages.userExists.code).json({
@@ -43,9 +48,10 @@ adminController.signup = async function (req, res) {
         } else {
             bcrypt.hash(req.body.password, 10).then((hash) => {
                 const admin = {
-                    userName: req.body.userName,
+                    userId : nextUserId,
+                    userName: req.body.name,
                     email: req.body.email,
-                    mobileNumber: req.body.mobileNumber,    
+                    mobileNumber: req.body.mobileNumber,
                     password: hash,
                     type: req.body.type,
                 }
@@ -106,6 +112,7 @@ adminController.signin = async function (req, res) {
                     res.status(responseMessages.signedIn.code).json({
                         message: responseMessages.signedIn.message,
                         result: {
+                            userId: admin.userId,
                             adminType: admin.type,
                             email: admin.email,
                             _id: admin._id,
@@ -114,7 +121,7 @@ adminController.signin = async function (req, res) {
                             userName: admin.userName,
                             profileImage: admin.profileImage
                         }
-                    });                 
+                    });
                 } else {
                     res.status(responseMessages.signInFailed.code).json({
                         message: responseMessages.signInFailed.message
@@ -128,48 +135,93 @@ adminController.signin = async function (req, res) {
             message: responseMessages.signInFailed.message,
             err: err
         });
-    } 
+    }
+}
+
+adminController.getProfile = async function(req,res){
+    console.log("Hi there!")
+    const profile = await Admin.findOne({userName: req.body.userName});
+    if(profile){
+        res.status(responseMessages.hotelsFound.code).json({
+            message: responseMessages.hotelsFound.message,
+            profile:profile,
+        });
+    }else{
+        res.status(responseMessages.hotelsNotFound.code).json({
+            message: responseMessages.hotelsNotFound.message,
+        });
+    }
+}
+
+adminController.updateProfile = async function (req, res) {
+    try{
+        const findProfile = await Admin.findOne({userName:req.body.userName});
+
+        const profile = await Admin.findOneAndUpdate(
+            { userName:req.body.userName },
+            {
+                ...req.body,
+            }
+        );
+
+        const findProfileToReturn = await Admin.findOne({userName:req.body.userName});
+
+        if (findProfileToReturn) {
+            res.status(responseMessages.hotelUpdate.code).json({
+                message: responseMessages.hotelUpdate.message,
+                res: findProfileToReturn
+            });
+        }
+    }catch(err) {
+        console.log(err);
+        res.status(responseMessages.hotelUpdateFailed.code).json({
+            message: responseMessages.hotelUpdateFailed.message
+        });
+    }
 }
 
 
 adminController.addHotel = async function (req, res){
-    console.log("hi")
+    console.log("addHotel")
+    const maxHotelNum = await Hotel.find({},{"hotelNumber":1}).sort({_id:-1}).limit(1);
+    const nextHotelNum = (maxHotelNum)?(parseInt(maxHotelNum[0].hotelNumber,10) + 1):1;
     try{
-            const hotel = {
-                hotelNumber: req.body.hotelNumber,
-                hotelName: req.body.hotelName,
-                hotelDescription: req.body.hotelDescription,
-                hotelLocation: req.body.hotelLocation,
-                hotelAddress: req.body.hotelAddress,
-                hotelImage: req.body.hotelImage,
-                breakfast: req.body.breakfast,
-                meal: req.body.meal,
-                gym: req.body.gym,
-                pool: req.body.pool,
-                parking: req.body.parking,
-                hotelCharge: req.body.hotelCharge,
-                weekendCharge: req.body.weekendCharge,
-                holidayCharge: req.body.holidayCharge,
-                seasonCharge: req.body.seasonCharge,
-            }
+        const hotel = {
+            hotelNumber: nextHotelNum,
+            hotelName: req.body.hotelName,
+            hotelDescription: req.body.hotelDescription,
+            hotelLocation: req.body.hotelLocation,
+            hotelAddress: req.body.hotelAddress,
+            hotelImage: req.body.hotelImage,
+            breakfast: req.body.breakfast,
+            meal: req.body.meal,
+            gym: req.body.gym,
+            pool: req.body.pool,
+            parking: req.body.parking,
+            hotelCharge: req.body.hotelCharge,
+            weekendCharge: req.body.weekendCharge,
+            holidayCharge: req.body.holidayCharge,
+            seasonCharge: req.body.seasonCharge,
+            extraGuestCharge: req.body.extraGuestCharge
+        }
 
-            const hotelCreated = await Hotel.create( hotel );
-            
-            const updateHotel = await Hotel.findByIdAndUpdate( 
-                { _id: hotelCreated._id },
-            );
-            const updatedData = await Hotel.findOne({ _id: updateHotel._id });
+        const hotelCreated = await Hotel.create( hotel );
 
-            result = {
-                updatedData
-            }
-            
-            res.status(responseMessages.hotelCreated.code).json({
-                message: responseMessages.hotelCreated.message,
-                result: result
-            });
-        
-            
+        const updateHotel = await Hotel.findByIdAndUpdate(
+            { _id: hotelCreated._id },
+        );
+        const updatedData = await Hotel.findOne({ _id: updateHotel._id });
+
+        result = {
+            updatedData
+        }
+
+        res.status(responseMessages.hotelCreated.code).json({
+            message: responseMessages.hotelCreated.message,
+            result: result
+        });
+
+
     } catch(err) {
         console.log(err);
         res.status(responseMessages.hotelCreationFailed.code).json({
@@ -385,16 +437,19 @@ adminController.getHotelFromLocation = async function(req,res){
 
 adminController.addRoom = async function(req,res){
     console.log("room added")
+    const maxRoomNum = await Room.find({},{"roomNumber":1}).sort({_id:-1}).limit(1);
+    const nextRoomNum = (maxRoomNum)?(parseInt(maxRoomNum[0].roomNumber,10) + 1):1;
+
     try{
         const room = {
-            roomNumber : req.body.roomNumber,
-            hotelNumber : req.body.hotelNumber, 
+            roomNumber : nextRoomNum,
+            hotelNumber : req.body.hotelNumber,
             type : req.body.type,
             image : req.body.image,
             description : req.body.description,
             typeCharge : req.body.typeCharge,
             roomBasePrice : req.body.roomBasePrice,
-            currentPrice : req.body.currentPrice 
+            currentPrice : req.body.currentPrice
         }
 
         const roomCreated = await Room.create( room );
@@ -448,6 +503,20 @@ adminController.updateRoom = async function (req, res) {
     }
 }
 
+adminController.deleteRoom = async function (req, res) {
+    try{
+        const deleteRoom = await Room.findOneAndDelete({ roomNumber:req.body.roomNumber });
+
+        res.status(responseMessages.hotelDelete.code).json({
+            message: responseMessages.hotelDelete.message,
+        });
+    }catch(err) {
+        res.status(responseMessages.hotelDeleteError.code).json({
+            message: responseMessages.hotelDeleteError.message
+        });
+    }
+}
+
 adminController.getAllRooms = async function(req, res){
     console.log("hello")
     const rooms = await Room.find({});
@@ -495,11 +564,13 @@ adminController.getPriceFromRoomNumber = async function(req,res){
 
 adminController.getRoom = async function(req,res){
     console.log("Hi there!")
-    const room = await Room.findOne({roomNumber: req.params.hn });
+    // const room = await Room.findOne({roomNumber: req.params.hn });
+    const room = await Room.findOne({roomNumber: req.body.roomNumber });
     if(room){
         res.status(responseMessages.hotelsFound.code).json({
             message: responseMessages.hotelsFound.message,
-            room:room.roomNumber,
+            // room:room.roomNumber,
+            room:room
         });
     }else{
         res.status(responseMessages.hotelsNotFound.code).json({
@@ -511,19 +582,29 @@ adminController.getRoom = async function(req,res){
 adminController.addBooking = async function(req,res){
     console.log("booking")
     try{
-        
+
+        // const maxBookingNums = await Book.find(`bookingNumber`);
+        const maxBookingNums = await Book.find({},{"bookingNumber":1}).sort({_id:-1}).limit(1);
+        // const maxBookingNums = Book.find({}).sort({_id:-1}).limit(1);
+        console.log(maxBookingNums[0].bookingNumber);
+
+        const nextBookingNum = (maxBookingNums)?(parseInt(maxBookingNums[0].bookingNumber,10) + 1):1;
+
         const book = {
+            bookingNumber: nextBookingNum,
             userId: req.body.userId,
-            bookingNumber: req.body.bookingNumber,
             hotelId: req.body.hotelId,
             roomId: req.body.roomID,
-            roomNumber: req.body.roomNumber,
+            // userName: req.body.userName,
+            // hotelNumber: req.body.hotelNumber,
+            // roomNumber: req.body.roomNumber,
             amount: req.body.amount,
             startDate: req.body.startDate,
             endDate: req.body.endDate,
             guests: req.body.guests,
-            status: req.body.status,
-            price: req.body.price
+            // status: req.body.status,
+            status: "Success"
+            // price: price
         }
 
         const bookingCreated = await Book.create( book );
@@ -673,10 +754,10 @@ adminController.calculatePrice = async function(req,res){
     var loop = new Date(start);
     const weekendCharge = hotel[0].weekendCharge
     const breakfast = req.body.breakfast
-    const meal = req.body.meal 
-    const gym = req.body.gym 
-    const pool = req.body.pool 
-    const parking = req.body.parking 
+    const meal = req.body.meal
+    const gym = req.body.gym
+    const pool = req.body.pool
+    const parking = req.body.parking
     const extraGuestCharge = req.body.guests
     console.log(roomBasePrice);
     console.log(weekendCharge);
@@ -686,22 +767,22 @@ adminController.calculatePrice = async function(req,res){
     var Holidays = require('date-holidays');
     var hd = new Holidays();
     hd.getStates('US');
-    hd.init('US'); 
+    hd.init('US');
     hd.getHolidays(2022);
 
     var c1 = 0;
     //var c2 = 0;
     while(loop <= end){
         if (loop.getDay() == 6 || loop.getDay() == 0){
-            
-            c1 += weekendCharge 
+
+            c1 += weekendCharge
             console.log(c1)
         }
 
-        if (hd.isHoliday(loop) == true) { 
+        if (hd.isHoliday(loop) == true) {
             c1 += holidayCharge;
         }
-        
+
         var newDate = loop.setDate(loop.getDate() + 1);
         loop = new Date(newDate);
     }
@@ -728,6 +809,51 @@ adminController.calculatePrice = async function(req,res){
         price: total
 
     })
+}
+
+adminController.getBookingFromUserId = async function(req,res){
+    console.log("Hi there!")
+    const bookings = await Book.find({userId: req.body.userId});
+    if(bookings){
+        res.status(responseMessages.hotelsFound.code).json({
+            message: responseMessages.hotelsFound.message,
+            bookings:bookings,
+        });
+    }else{
+        res.status(responseMessages.hotelsNotFound.code).json({
+            message: responseMessages.hotelsNotFound.message,
+        });
+    }
+}
+
+adminController.getBookingFromBookingNumber = async function(req,res){
+    console.log("Hi there!")
+    const booking = await Book.find({bookingNumber: req.body.bookingNumber});
+    if(booking){
+        res.status(responseMessages.hotelsFound.code).json({
+            message: responseMessages.hotelsFound.message,
+            booking:booking,
+        });
+    }else{
+        res.status(responseMessages.hotelsNotFound.code).json({
+            message: responseMessages.hotelsNotFound.message,
+        });
+    }
+}
+
+adminController.getAllBookings = async function(req, res){
+    console.log("hello")
+    const bookings = await Book.find({});
+    if(bookings){
+        res.status(responseMessages.hotelsFound.code).json({
+            message: responseMessages.hotelsFound.message,
+            bookings: bookings
+        });
+    }else{
+        res.status(responseMessages.hotelsNotFound.code).json({
+            message: responseMessages.hotelsNotFound.message,
+        });
+    }
 }
 
 adminController.deleteBookingFromId = async function (req, res) {
